@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -40,10 +41,11 @@ FirebaseAuth fauth = FirebaseAuth.getInstance();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_add);
         submit = findViewById(R.id.prod_submit);
-        name = findViewById(R.id.add_p_name);
-        price = findViewById(R.id.add_p_price);
-        desc = findViewById(R.id.add_p_desc);
+        name = findViewById(R.id.add_p_name_content);
+        price = findViewById(R.id.add_p_price_content);
+        desc = findViewById(R.id.add_p_desc_content);
         img_btn = findViewById(R.id.select_image);
+
         img_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -74,7 +76,7 @@ FirebaseAuth fauth = FirebaseAuth.getInstance();
         }
     }
     private void uploadImage() {
-
+        the_name = name.getText().toString() + currentDateAndTime;
         storageReference = FirebaseStorage.getInstance().getReference("/" + the_name);
         storageReference.putFile(imageUri)
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -92,7 +94,7 @@ FirebaseAuth fauth = FirebaseAuth.getInstance();
                 }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(product_add.this,"Failed to Upload",Toast.LENGTH_SHORT).show();
+                Toast.makeText(product_add.this,e.toString(),Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -101,11 +103,11 @@ FirebaseAuth fauth = FirebaseAuth.getInstance();
     {
 //        Toast.makeText(product_add.this,generatedFilePath,Toast.LENGTH_SHORT).show();
 
-        the_name = name.getText().toString() + currentDateAndTime;
         Map<String, Object> user = new HashMap<>();
         user.put("name", name.getText().toString());
         user.put("price", price.getText().toString());
         user.put("desc", desc.getText().toString());
+        user.put("email", fauth.getCurrentUser().getEmail());
         user.put("url", generatedFilePath);
 
 //        Toast.makeText(product_add.this, currentDateAndTime, Toast.LENGTH_SHORT);
@@ -116,6 +118,11 @@ FirebaseAuth fauth = FirebaseAuth.getInstance();
                     @Override
                     public void onSuccess(Void unused) {
                         Toast.makeText(product_add.this, "Success", Toast.LENGTH_SHORT).show();
+                        SharedPreferences sharedPreferences = getSharedPreferences("changes", MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putInt("changed_home", 1);
+                        editor.putInt("changed_user", 1);
+                        editor.apply();
                     }
                 }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -124,21 +131,23 @@ FirebaseAuth fauth = FirebaseAuth.getInstance();
             }
         });
 
-        user.clear();
-        user.put("email", fauth.getCurrentUser().getEmail());
-        db.collection("root")
-                .document(fauth.getCurrentUser().getEmail())
-                .set(user)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-//                                Toast.makeText(product_add.this, "Success", Toast.LENGTH_SHORT).show();
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(product_add.this, "Failure", Toast.LENGTH_SHORT).show();
-            }
-        });
+//        user.clear();
+//        user.put("email", fauth.getCurrentUser().getEmail());
+//        db.collection("root")
+//                .document(fauth.getCurrentUser().getEmail())
+//                .set(user)
+//                .addOnSuccessListener(new OnSuccessListener<Void>() {
+//                    @Override
+//                    public void onSuccess(Void unused) {
+////                                Toast.makeText(product_add.this, "Success", Toast.LENGTH_SHORT).show();
+//                    }
+//                }).addOnFailureListener(new OnFailureListener() {
+//            @Override
+//            public void onFailure(@NonNull Exception e) {
+//                Toast.makeText(product_add.this, "Failure", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+
+
     }
 }

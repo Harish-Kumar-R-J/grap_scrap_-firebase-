@@ -2,23 +2,31 @@ package com.example.mini_project;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
+import com.facebook.shimmer.ShimmerFrameLayout;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -26,22 +34,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class home extends AppCompatActivity {
-
+ak
     RecyclerView recyclerView;
     adapter adapter_obj;
     EditText search;
+    ConstraintLayout constraintLayout;
     Button add, logout, print, disp, user_page; Button user_profile;
     List<String> p_name = new ArrayList<>();
     List<String> p_desc = new ArrayList<>();
     List<String> p_price = new ArrayList<>();
     List<String> p_image = new ArrayList<>();
-
+    List<String> p_email = new ArrayList<>();
+    ShimmerFrameLayout shimmerFrameLayout;
     List<String> root_document = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        search = findViewById(R.id.home_search);
+        recyclerView = findViewById(R.id.recycler_home);
+        constraintLayout = findViewById(R.id.home_layout);
+        shimmerFrameLayout = findViewById(R.id.shimmerFrameLayout);
+        search = findViewById(R.id.home_search_content);
         user_page = findViewById(R.id.user_profile);
         user_page.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,7 +64,23 @@ public class home extends AppCompatActivity {
             }
         });
 
+        constraintLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                search.clearFocus();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        });
 
+        recyclerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                search.clearFocus();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        });
 
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
                 .detectDiskReads()
@@ -98,37 +128,6 @@ public class home extends AppCompatActivity {
         });
 
 
-
-        get_root(new For_root() {
-            @Override
-            public void onCallback(List<String> list) {
-                for(int i=0;i<root_document.size();i++)
-                {String doc_name = root_document.get(i);
-                    get_collection(new For_collection() {
-                        @Override
-                        public void onCallback(List<String> list) {
-                            for(String s: list)
-                            {get_document(new FirestoreCallback() {
-                                    @Override
-                                    public void onCallback(List<String> name, List<String> price, List<String> desc)
-                                    {p_name = name;
-                                     p_desc = desc;
-                                     p_price = price;
-                                        LinearLayoutManager mainlayoutManager = new LinearLayoutManager(home.this, LinearLayoutManager.VERTICAL, false);
-                                        RecyclerView main_recycler = findViewById(R.id.recycler_home);
-                                        main_recycler.setLayoutManager(mainlayoutManager);
-//    main_screen_adapter main_screen_adapter = new main_screen_adapter(MainActivity.this, districts, notes, active, confirmed, migrated, deceased, recovered, d_confirmed, d_recovered, d_deceased);
-                                        adapter_obj = new adapter(home.this,p_name, p_desc, p_price,p_image, null);
-                                        main_recycler.setAdapter(adapter_obj);}
-                                }, doc_name, s);}
-                        }
-                    }, root_document.get(i));
-
-}
-
-            }
-        });
-
 //        print = findViewById(R.id.product_print);
 //        print.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -155,14 +154,103 @@ public class home extends AppCompatActivity {
 //
 //            }
 //        });
+        get_root(new For_root() {
+            @Override
+            public void onCallback(List<String> list) {
+                for(int i=0;i<root_document.size();i++)
+                {String doc_name = root_document.get(i);
+                    get_collection(new For_collection() {
+                        @Override
+                        public void onCallback(List<String> list) {
+                            for(String s: list)
+                            {get_document(new FirestoreCallback() {
+                                @Override
+                                public void onCallback(List<String> name, List<String> price, List<String> desc, List<String> email)
+                                {
+                                    p_name = name;
+                                    p_desc = desc;
+                                    p_price = price;
+                                    p_email = email;
+                                    LinearLayoutManager mainlayoutManager = new LinearLayoutManager(home.this, LinearLayoutManager.VERTICAL, false);
+                                    RecyclerView main_recycler = findViewById(R.id.recycler_home);
+                                    main_recycler.setLayoutManager(mainlayoutManager);
+//    main_screen_adapter main_screen_adapter = new main_screen_adapter(MainActivity.this, districts, notes, active, confirmed, migrated, deceased, recovered, d_confirmed, d_recovered, d_deceased);
+                                    adapter_obj = new adapter(home.this,p_name, p_desc, p_price,p_image,p_email, null);
+                                    shimmerFrameLayout.stopShimmer();
+                                    shimmerFrameLayout.setVisibility(View.INVISIBLE);
+
+                                    main_recycler.setAdapter(adapter_obj);
+                                    }
+                            }, doc_name, s);}
+                        }
+                    }, root_document.get(i));
+
+                }
+
+            }
+        });
+//        new load().execute();
 
     }
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        SharedPreferences sharedPreferences = getSharedPreferences("changes", MODE_PRIVATE);
+
+        if(sharedPreferences.getInt("changed_home",0)==1)
+        {shimmerFrameLayout.startShimmer();
+            p_name.clear();
+            p_desc.clear();
+            p_price.clear();
+            p_image.clear();
+            root_document.clear();
+            System.out.println(p_name.size() + " lllllllllll");
+            get_root(new For_root() {
+                @Override
+                public void onCallback(List<String> list) {
+                    for(int i=0;i<root_document.size();i++)
+                    {String doc_name = root_document.get(i);
+                        get_collection(new For_collection() {
+                            @Override
+                            public void onCallback(List<String> list) {
+
+                                for(String s: list)
+                                {get_document(new FirestoreCallback() {
+                                    @Override
+                                    public void onCallback(List<String> name, List<String> price, List<String> desc, List<String> email)
+                                    {System.out.println(name.size() + " mmmmmmm");
+                                        p_name = name;
+                                        p_desc = desc;
+                                        p_price = price;
+                                        p_email = email;
+                                        LinearLayoutManager mainlayoutManager = new LinearLayoutManager(home.this, LinearLayoutManager.VERTICAL, false);
+                                        RecyclerView main_recycler = findViewById(R.id.recycler_home);
+                                        main_recycler.setLayoutManager(mainlayoutManager);
+                                        System.out.println(p_name.size() + " oooooooooo");
+//    main_screen_adapter main_screen_adapter = new main_screen_adapter(MainActivity.this, districts, notes, active, confirmed, migrated, deceased, recovered, d_confirmed, d_recovered, d_deceased);
+                                        adapter_obj = new adapter(home.this,p_name, p_desc, p_price,p_image,p_email, null);
+                                        shimmerFrameLayout.stopShimmer();
+                                        shimmerFrameLayout.setVisibility(View.INVISIBLE);
+                                        main_recycler.setAdapter(adapter_obj);}
+                                }, doc_name, s);}
+                            }
+                        }, root_document.get(i));
+
+                    }
+
+                }
+            });
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("changed_home",0);
+        editor.apply();}
+    shimmerFrameLayout.stopShimmer();}
 
     void filter(String text)
     {ArrayList<String> a = new ArrayList<>();
         for(String item : p_name)
-        {
-            if(item.toLowerCase().contains(text.toLowerCase()))
+        {if(item.toLowerCase().contains(text.toLowerCase()))
             {a.add(item);
 //    filteredList.add(new whatever_name(item.getDistrict(), item.getNotes(), item.getActive(), item.getMigrated(), item.getConfirmed(), item.getDeceased(), item.getRecovered(), item.getD_confirmed(), item.getD_deceased(), item.getD_recovered()));
                 System.out.println(item + " item.getDistrict()");
@@ -175,12 +263,13 @@ public class home extends AppCompatActivity {
         RecyclerView main_recycler = findViewById(R.id.recycler_home);
         main_recycler.setLayoutManager(mainlayoutManager);
 //    main_screen_adapter main_screen_adapter = new main_screen_adapter(MainActivity.this, districts, notes, active, confirmed, migrated, deceased, recovered, d_confirmed, d_recovered, d_deceased);
-        adapter_obj = new adapter(home.this,a, p_desc, p_price,p_image, null);
+        adapter_obj = new adapter(home.this,a, p_desc, p_price,p_image,p_email, null);
         main_recycler.setAdapter(adapter_obj);
     }
 
     void get_root(For_root for_root)
-    {
+    {shimmerFrameLayout.setVisibility(View.VISIBLE);
+        shimmerFrameLayout.startShimmer();
         FirebaseFirestore.getInstance()
             .collection("root")
             .get()
@@ -235,12 +324,13 @@ public class home extends AppCompatActivity {
                         p_desc.add(documentSnapshot.getString("desc"));
                         p_price.add(documentSnapshot.getString("price"));
                         p_image.add(documentSnapshot.getString("url"));
-                        firestoreCallback.onCallback(p_name, p_price, p_desc);
+                        p_email.add(documentSnapshot.getString("email"));
+                        firestoreCallback.onCallback(p_name, p_price, p_desc, p_email);
                     }
                 });
     }
 
     private interface FirestoreCallback
-    {void onCallback(List<String> name, List<String> price, List<String> desc);}
+    {void onCallback(List<String> name, List<String> price, List<String> desc, List<String> email);}
 
 }

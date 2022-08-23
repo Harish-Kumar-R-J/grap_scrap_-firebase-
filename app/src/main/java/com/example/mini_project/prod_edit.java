@@ -3,18 +3,15 @@ package com.example.mini_project;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
-
 import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -24,7 +21,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,7 +45,6 @@ public class prod_edit extends AppCompatActivity {
         desc = findViewById(R.id.p_desc_edit);
         edit = findViewById(R.id.prod_edit_btn);
         delete = findViewById(R.id.prod_delete_btn);
-
         img.setEnabled(false);
 
         edit.setOnClickListener(new View.OnClickListener() {
@@ -63,10 +58,8 @@ public class prod_edit extends AppCompatActivity {
                 edit.setText("save");}
                 else
                     uploadImage();
-
             }
         });
-
 
         Intent intent = getIntent();
         Bundle b = intent.getExtras();
@@ -91,13 +84,31 @@ public class prod_edit extends AppCompatActivity {
             public void onClick(View view) {
                 db.collection(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                         .document(the_name).delete().addOnSuccessListener(new OnSuccessListener<Void>() {
-
                     @Override
                     public void onSuccess(Void unused) {
+                        StorageReference photoRef = FirebaseStorage.getInstance().getReferenceFromUrl(file_path);
+                        photoRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                SharedPreferences sharedPreferences = getSharedPreferences("changes", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = sharedPreferences.edit();
+                                editor.putInt("changed_home", 1);
+                                editor.putInt("changed_user", 1);
+                                editor.apply();
+                                Toast.makeText(prod_edit.this, "Deleted", Toast.LENGTH_SHORT).show();
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                            }
+                        });
                         System.out.println(the_name + " System.out.println(the_name);");
-                        Toast.makeText(prod_edit.this, "Deleted", Toast.LENGTH_SHORT).show();;
+
                     }
                 });
+
+
+
             }
         });
     }
@@ -105,7 +116,6 @@ public class prod_edit extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == 100 && data != null && data.getData() != null){
             imageUri = data.getData();
             img.setImageURI(imageUri);
@@ -114,8 +124,6 @@ public class prod_edit extends AppCompatActivity {
     }
 
     private void uploadImage() {
-
-
         if(img_change == 0)
         {generatedFilePath = file_path;
             update();}
@@ -131,6 +139,7 @@ public class prod_edit extends AppCompatActivity {
                             public void onSuccess(Uri uri) {
                                 generatedFilePath = uri.toString();
                                 update();
+
                             }
                         });
                     }
@@ -143,7 +152,6 @@ public class prod_edit extends AppCompatActivity {
     }}
     void update()
     {Toast.makeText(prod_edit.this,generatedFilePath,Toast.LENGTH_SHORT).show();
-
 
         Map<String, Object> user = new HashMap<>();
         user.put("name", name.getText().toString());
@@ -166,11 +174,16 @@ public class prod_edit extends AppCompatActivity {
 //                Toast.makeText(prod_edit.this, "Failure", Toast.LENGTH_SHORT).show();
 //            }
 //        });
-//
 //        user.clear();
+
         user.put("email", fauth.getCurrentUser().getEmail());
         db.collection(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .document(the_name).update(user);
+        SharedPreferences sharedPreferences = getSharedPreferences("changes", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("changed_home", 1);
+        editor.putInt("changed_user", 1);
+        editor.apply();
     }
 
 }
